@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 logs/
 data/raw/
+Ablex_session1.session

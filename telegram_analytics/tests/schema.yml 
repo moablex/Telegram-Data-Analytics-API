@@ -1,0 +1,3 @@
+tests:
+  - name: no_null_messages
+    description: Ensures that both message and media are not null together — we expect at least one to be present.

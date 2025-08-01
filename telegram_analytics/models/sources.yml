@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    database: telegramAPI
+    tables:
+      - name: telegram_messages

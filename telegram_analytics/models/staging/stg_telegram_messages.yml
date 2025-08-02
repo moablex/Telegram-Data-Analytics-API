@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_telegram_messages
+    description: >
+      Staging model that cleans and renames columns from the raw Telegram messages source.
+      It prepares the data for downstream reporting and analysis.
+    columns:
+      - name: message_id
+        description: Unique identifier for each Telegram message.
+
+      - name: message_timestamp
+        description: Timestamp when the message was sent.
+
+      - name: message
+        description: Text content of the message (may be null for media-only posts).
+
+      - name: sender_id
+        description: Identifier of the sender (user or bot) of the message.
+
+      - name: media
+        description: Path or metadata of any media attached to the message (image, video, etc.).
+
+      - name: channel
+        description: Telegram channel where the message was posted.
+
+      - name: raw_json
+        description: The full raw JSON payload from the API, stored for reference.
+
+    meta:
+      owner: ablex
+      tags: [telegram, staging, analytics]

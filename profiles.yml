@@ -1,0 +1,12 @@
+telegram_analytics:
+  outputs:
+    dev:
+      dbname: telegramAPI
+      host: db
+      pass: newpassword
+      port: 5432
+      schema: analytics
+      threads: 1
+      type: postgres
+      user: postgres
+  target: dev

@@ -6,3 +6,7 @@ sources:
     database: telegramAPI
     tables:
       - name: telegram_messages
+
+  - name: public
+    tables:
+      - name: stg_image_detections

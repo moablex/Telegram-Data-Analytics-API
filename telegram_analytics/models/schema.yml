@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: fct_image_detections
+    description: "Final table with YOLOv8 detection results from Telegram images"
+    columns:
+      - name: message_id
+        tests: [not_null]
+      - name: channel
+      - name: image_path
+      - name: object_class
+      - name: confidence
+      - name: bbox

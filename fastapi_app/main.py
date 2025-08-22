@@ -1,31 +1,19 @@
-from fastapi import FastAPI, Depends, HTTPException
+# Telegram-Data-Analytics-API/fastapi_app/main.py
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from database import connect_db, disconnect_db
-from database import connect_db, disconnect_db, get_db
-
-import models
-from sqlalchemy.orm import Session
-
-import crud, schemas
-app = FastAPI(title="Telegram Analytics API")
 import crud
-@app.on_event("startup")
-async def startup():
-    await connect_db()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await disconnect_db()
-
-
-from fastapi import FastAPI, Query
-from typing import List
-from database import connect_db, disconnect_db, database
-from models import TopProduct, ChannelActivity, Message
+import models
 
 app = FastAPI(title="Telegram Analytics API")
-
-# Lifecycle events
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.on_event("startup")
 async def startup():
     await connect_db()
@@ -34,44 +22,17 @@ async def startup():
 async def shutdown():
     await disconnect_db()
 
-# --- Endpoints ---
+@app.get("/api/reports/top-products", response_model=List[models.TopProduct])
+async def top_products(limit: int = Query(10, ge=1, le=100)):
+    return await crud.get_top_products(limit)
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Telegram Data Analytics API!"}
-# 1. Top Products
-@app.get("/api/reports/top-products", response_model=List[TopProduct])
-async def get_top_products(limit: int = Query(10, ge=1)):
-    query = """
-        SELECT product_name, mention_count
-        FROM top_products
-        ORDER BY mention_count DESC
-        LIMIT :limit
-    """
-    rows = await database.fetch_all(query=query, values={"limit": limit})
-    return rows
+@app.get("/api/channels/{channel_name}/activity", response_model=List[models.ChannelActivity])
+async def channel_activity(channel_name: str):
+    results = await crud.get_channel_activity(channel_name)
+    if not results:
+        raise HTTPException(status_code=404, detail="Channel not found or no activity")
+    return results
 
-# 2. Channel Activity
-@app.get("/api/channels/{channel_name}/activity", response_model=List[ChannelActivity])
-async def get_channel_activity(channel_name: str):
-    query = """
-        SELECT channel, day, messages_count
-        FROM channel_activity
-        WHERE channel = :channel_name
-        ORDER BY day
-    """
-    rows = await database.fetch_all(query=query, values={"channel_name": channel_name})
-    return rows
-
-# 3. Search Messages
-@app.get("/api/search/messages", response_model=List[Message])
-async def search_messages(query: str = Query(..., min_length=1)):
-    sql = """
-        SELECT message_id, message_timestamp, sender_id, channel AS channel_name, message
-        FROM fct_messages
-        WHERE message ILIKE :search
-        ORDER BY message_timestamp DESC
-        LIMIT 50
-    """
-    rows = await database.fetch_all(sql, values={"search": f"%{query}%"})
-    return rows
+@app.get("/api/search/messages", response_model=List[models.Message])
+async def search_messages(query: str = Query(..., min_length=2)):
+    return await crud.search_messages(query)

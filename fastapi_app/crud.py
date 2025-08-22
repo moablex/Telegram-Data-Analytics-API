@@ -1,31 +1,29 @@
-from sqlalchemy.orm import Session
-from models import Message, Channel
-from sqlalchemy import func
+from database import database
 
-def get_top_products(db: Session, limit: int = 10):
-    # Example: assumes messages table has column product_name
-    return (
-        db.query(Message.product_name, func.count().label("count"))
-        .group_by(Message.product_name)
-        .order_by(func.count().desc())
-        .limit(limit)
-        .all()
-    )
+async def get_top_products(limit: int = 10):
+    query = """
+    SELECT product_name, mention_count
+    FROM analytics.top_products
+    ORDER BY mention_count DESC
+    LIMIT :limit
+    """
+    return await database.fetch_all(query=query, values={"limit": limit})
 
-def get_channel_activity(db: Session, channel_name: str):
-    return (
-        db.query(func.date_trunc("day", Message.message_timestamp).label("date"),
-                 func.count(Message.message_id).label("message_count"))
-        .join(Channel, Channel.channel_name == channel_name)
-        .filter(Message.channel == channel_name)
-        .group_by(func.date_trunc("day", Message.message_timestamp))
-        .order_by("date")
-        .all()
-    )
+async def get_channel_activity(channel_name: str):
+    query = """
+    SELECT channel, day, messages_count
+    FROM analytics.channel_activity
+    WHERE channel = :channel_name
+    ORDER BY day
+    """
+    return await database.fetch_all(query=query, values={"channel_name": channel_name})
 
-def search_messages(db: Session, query: str):
-    return (
-        db.query(Message)
-        .filter(Message.message.ilike(f"%{query}%"))
-        .all()
-    )
+async def search_messages(query_str: str):
+    query = """
+    SELECT message_id, message_timestamp, sender_id, channel_name, message
+    FROM analytics.fct_messages
+    WHERE message ILIKE '%' || :query_str || '%'
+    ORDER BY message_timestamp DESC
+    LIMIT 50
+    """
+    return await database.fetch_all(query=query, values={"query_str": query_str})
